@@ -1,0 +1,34 @@
+{
+  "version": 0.1,
+  "status": "success",
+  "response": {
+    "data": [{
+      "id": 810,
+      "name": "Shops",
+      "address": "1234 Shopping Place",
+      "city": "Shoppington",
+      "state": "SP",
+      "zip": "12345",
+      "phone_number": "123-456-7890",
+      "hours_text": null,
+      "description": "Shopping is great in Shoppington. Check us out!",
+      "time_zone_name": "Central",
+      "url": "http://www.shopsofshoppington.com/",
+      "hours": {
+        "sun": "12pm-5:30pm",
+        "mon": "10am-8pm",
+        "tue": "10am-8pm",
+        "wed": "10am-8pm",
+        "thu": "10am-8pm",
+        "fri": "10am-8pm",
+        "sat": "10am-8pm"
+      },
+      "lat": 55.555,
+      "long": -88.888,
+      "map_url": null,
+      "distance": null
+    }],
+    "rows": 1,
+    "message": ""
+  }
+}
