@@ -17,13 +17,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PlaceWise/jsontest"
+    "url": "https://github.com/PlacewiseMedia/jsontest"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/PlaceWise/jsontest/issues"
+    "url": "https://github.com/PlacewiseMedia/jsontest/issues"
   },
-  "homepage": "https://github.com/PlaceWise/jsontest",
+  "homepage": "https://github.com/PlacewiseMedia/jsontest",
   "dependencies": {
     "testing": "^0.1.9",
     "JSONSelect": "^0.4.0",
