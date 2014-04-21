@@ -4,26 +4,7 @@ _s = require 'underscore.string'
 math = require('mathjs')()
 iz = require 'iz'
 
-# Type Helpers
-
-# Used to create an object describing the result of the test.
-result = (code, msg) ->
-  results = {}
-
-  if code is -1
-    results.message = "Test written incorrectly. " + msg
-    results.condition = 'fail'
-    results.color = 'orange'
-  else if code
-    results.condition = 'pass'
-    results.message = "Test passed."
-    results.color = 'green'
-  else
-    results.condition = 'fail'
-    results.message = "Test failed."
-    results.color = 'red'
-
-  results
+# Private Helpers
 
 # Used to provide multiple options for a test-writer to use in a Math.js expression.
 makeVal = (val) ->
@@ -38,44 +19,65 @@ search = (str, arr) ->
       return yes
   no
 
-# Used for tests that use mathematical inequalities.
-inequalityTest = (expr, val) ->
-  unless _.isString expr
-    return result -1, "Expression must be a string."
+# Results Class
+# Used to create an object describing the result of the test.
+class Result
+  constructor: (@condition, @color, @message) ->
 
-  unless search expr, ['<', '>', '<=', '>=', '==']
-    return result -1, "Expression must contain an inequality (<, >, <=, >=, or ==)."
+# Tests Class
+# Keeps all the methods accessible by JSON assertions.
+class Tests
+  constructor: (@type, @negated, @warning) ->
+    @run = @[type]
 
-  unless search expr, ['v ', ' v', 'val', 'value']
-    return result -1, "Expression must compare against a value (v, val, value)."
+  result: (code, msg) ->
+    if code is -1
+      new Result 'fail', 'orange',  "Test written incorrectly: " + msg
+    else if code
+      new Result 'pass', 'green',   "Test passed."
+    else if code is 0 and @negated
+      new Result 'pass', 'green',   "Test negated and passed."
+    else if code is 0 and @warning
+      new Result 'warn', 'yellow',  "Warning: " + msg
+    else
+      new Result 'fail', 'red',     "Test failed!"
 
-  result math.eval expr, makeVal(val)
+  # Used for tests that use mathematical inequalities. Should be private.
+  _inequalityTest: (expr, val) ->
+    unless _.isString expr
+      return @result -1, "Expression must be a string."
 
-# Library
-library =
+    unless search expr, ['<', '>', '<=', '>=', '==']
+      return @result -1, "Expression must contain an inequality (<, >, <=, >=, or ==)."
+
+    unless search expr, ['v ', ' v', 'val', 'value']
+      return @result -1, "Expression must compare against a value (v, val, value)."
+
+    @result math.eval expr, makeVal(val)
+
   # Check length of an array against an inequality expression.
   length: (obj, expr) ->
     if _.isArray obj
-      inequalityTest expr, obj.length
+      @_inequalityTest expr, obj.length
     else
-      result -1, "Only arrays can be used with the length test."
+      @result -1, "Only arrays can be used with the length test."
 
   # Check number of keys in an object against an inequality expression.
   count: (obj, expr) ->
     if _.isObject obj
-      inequalityTest expr, Object.keys(obj).length
+      @_inequalityTest expr, Object.keys(obj).length
     else
-      result -1, "Only objects can be used with the count test."
+      @result -1, "Only objects can be used with the count test."
 
   # Check existence of a truthy value.
   exists: (obj, key) ->
     unless _.isString key
-      return result -1, "Property name must be a string."
+      return @result -1, "Property name must be a string."
 
     if obj[key]
-      result 1
+      @result 1
     else
-      result 0
+      @result 0
 
   # Check JSON type against Grunt's own type detector.
   kind: (obj, type) ->
@@ -89,26 +91,26 @@ library =
       undefined:  'isUndefined'
 
     unless types[type]
-      return result -1, "Invalid JSON type was provided."
+      return @result -1, "Invalid JSON type was provided."
 
-    return result _[types[type]](obj)
+    @result _[types[type]](obj)
 
-  contains: ->
+  # Contains the provided array of keys. Not recursive.
+  containsKeys: (obj, keys) ->
+    missingKeys = []
 
-  checkAgainstMany: ->
-    result -1, 'Unimplemented!'
+    for k in keys
+      unless obj[k]
+        missingKeys.push k
 
+    if missingKeys.length
+      return @result 0, "Couldn't find the following keys: " + missingKeys.join ', '
+
+    @result 1
+
+  # Checks against iz rules.
   rules: (obj, rules) ->
     iz.are(rules).validFor obj
 
-  isPhoneNumber: ->
-    result -1, 'Unimplemented!'
-
-  isURL: ->
-    result -1, 'Unimplemented!'
-
-  isEmailAddress: ->
-    result -1, 'Unimplemented!'
-
-module.exports = (type) ->
-  library[type]
+module.exports = (type, negated, warning) ->
+  new Tests type, negated, warning

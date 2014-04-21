@@ -26,30 +26,64 @@ module.exports = (grunt) ->
         grunt.log.error "Could not find JSON file #{file}"
         continue
 
-      for selector, assertion of assertions
-        select.forEach selector, json, (obj) ->
+      for sel, assertion of assertions
+        conf =
+          assert: assertion
+          negated: no
+          warning: no
+
+        # Process expression for modifiers
+        if sel.indexOf('! ') is 0
+          conf.negated = yes
+          conf.sel = sel.split('! ')[1]
+        else if sel.indexOf('!') is 0
+          conf.negated = yes
+          conf.sel = sel.split('!')[1]
+        else if sel.indexOf('? ') is 0
+          conf.warning = yes
+          conf.sel = sel.split('? ')[1]
+        else if sel.indexOf('?') is 0
+          conf.warning = yes
+          conf.sel = sel.split('?')[1]
+        else
+          conf.sel = sel
+
+        select.forEach conf.sel, json, (obj) ->
 
           for type, expr of assertion
-            expectations.push
-              func: tests(type, obj, expr)
-              obj: obj
-              type: type
-              expr: expr
-              sel: selector
-              assert: assertion
+            conf.obj = obj
+            conf.type = type
+            conf.expr = expr
+
+            conf.test = tests type, conf.negated, conf.warning
+
+            expectations.push conf
+
+    # Helps for warning and dying later.
+    warnings = 0
+    failures = 0
+    passes = 0
 
     # Run tests
     results = {}
     results[@target] = expectations.map (expect) ->
-      {func, obj, expr} = expect
-      expect.result = func(obj, expr)
+      {test, obj, expr} = expect
+      expect.result = test.run obj, expr
       expect.result.prettyMessage = clc[expect.result.color](expect.result.message)
       delete expect.result.color
+
+      if expect.result.condition is 'warn'
+        warnings++
+      else if expect.result.condition is 'fail'
+        failures++
+      else if expect.result.condition is 'pass'
+        passes++
+
       expect
 
     # Output results
-    for result in results[@target]
-      grunt.log.writeln "Tested #{result.sel} using #{result.type} test for #{result.expr}: #{result.result.prettyMessage}"
+    for target in results[@target]
+      grunt.log.writeln "Tested #{target.sel} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
 
     # Write results
     if grunt.file.exists @data.dest
@@ -59,6 +93,18 @@ module.exports = (grunt) ->
 
     resultsFile[@target] = _.pluck(results[@target], 'result')
     grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
+
+    grunt.log.writeln "Summary:"
+    grunt.log.writeln clc.green "#{passes} tests passed."
+
+    if warnings
+      grunt.fail.warn "#{warnings} tests resulted in warnings."
+
+    if failures
+      grunt.fail.fatal "#{failures} tests failed."
+
+    if passes is expectations.length
+      grunt.log.writeln clc.green "All tests passed!"
 
     # Finish
     cb()

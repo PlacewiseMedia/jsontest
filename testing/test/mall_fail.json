@@ -1,1 +1,5 @@
-{}
+{
+  "!.data .hours": {
+    "containsKeys": ["sun", "mon", "tue", "wed", "thu", "fri", "sat", "bat"]
+  }
+}

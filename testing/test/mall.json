@@ -2,5 +2,8 @@
   ".data": {
     "length": "val > 0",
     "kind": "array"
+  },
+  ".data .hours": {
+    "containsKeys": ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
   }
 }
