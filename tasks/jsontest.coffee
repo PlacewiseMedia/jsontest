@@ -31,6 +31,7 @@ module.exports = (grunt) ->
           assert: assertion
           negated: no
           warning: no
+          file: file
 
         # Process expression for modifiers
         if sel.indexOf('! ') is 0
@@ -48,7 +49,14 @@ module.exports = (grunt) ->
         else
           conf.sel = sel
 
-        select.forEach conf.sel, json, (obj) ->
+        selector = select.compile conf.sel
+
+        matches = selector.match json
+
+        unless matches.length
+          grunt.fail.warn "Selector #{conf.sel} didn't find any matches in #{file}."
+
+        selector.forEach json, (obj) ->
 
           for type, expr of assertion
             conf.obj = obj
@@ -83,7 +91,7 @@ module.exports = (grunt) ->
 
     # Output results
     for target in results[@target]
-      grunt.log.writeln "Tested #{target.sel} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
+      grunt.log.writeln "Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
 
     # Write results
     if @data.dest
@@ -96,6 +104,7 @@ module.exports = (grunt) ->
       resultsFile[@target] = _.pluck(results[@target], 'result')
       grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
 
+    # Display results
     grunt.log.writeln "Summary:"
     grunt.log.writeln clc.green "#{passes} tests passed."
 
