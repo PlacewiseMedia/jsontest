@@ -86,13 +86,15 @@ module.exports = (grunt) ->
       grunt.log.writeln "Tested #{target.sel} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
 
     # Write results
-    if grunt.file.exists @data.dest
-      resultsFile = grunt.file.readJSON @data.dest
-    else
-      resultsFile = {}
+    if @data.dest
 
-    resultsFile[@target] = _.pluck(results[@target], 'result')
-    grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
+      if grunt.file.exists @data.dest
+        resultsFile = grunt.file.readJSON @data.dest
+      else
+        resultsFile = {}
+
+      resultsFile[@target] = _.pluck(results[@target], 'result')
+      grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
 
     grunt.log.writeln "Summary:"
     grunt.log.writeln clc.green "#{passes} tests passed."
