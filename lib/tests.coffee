@@ -1,7 +1,7 @@
 # Packages
 _ = require 'lodash'
 _s = require 'underscore.string'
-math = require('mathjs')()
+math = require 'mathjs'
 iz = require 'iz'
 
 # Private Helpers
