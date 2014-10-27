@@ -67,6 +67,13 @@ module.exports = (grunt) ->
 
         selector.forEach json, (obj) ->
           for type, expr of assertion
+            # Process any selectors within an assertion, as well. Uses lexic pattern from qonsumer.
+            lexics = expr.toString().match /\(.*?\)/g
+            if lexics
+              for lexic in lexics
+                expr_matches = select.match lexic.substring(1, lexic.length - 1), obj
+                expr = expr.replace lexic, expr_matches[0] # Hardcoded, always use first result.
+
             c = _.clone conf
             c.obj = obj
             c.type = type

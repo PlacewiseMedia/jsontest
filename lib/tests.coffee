@@ -71,6 +71,7 @@ class Tests
     else
       @result -1, "Only objects can be used with the count test."
 
+  # Prints the length of the supplied array as an info message.
   print_length_as: (obj, expr) ->
     if _.isArray obj
       @result 2, "There are #{obj.length} #{expr}"
