@@ -33,6 +33,8 @@ class Tests
   result: (code, msg) ->
     if code is -1
       new Result 'fail', 'orange',  "Test written incorrectly: " + msg
+    else if code is 2
+      new Result 'info', 'cyan',    "Info: " + msg
     else if code
       new Result 'pass', 'green',   "Test passed."
     else if code is 0 and @negated
@@ -53,7 +55,7 @@ class Tests
     unless search expr, ['v ', ' v', 'val', 'value']
       return @result -1, "Expression must compare against a value (v, val, value)."
 
-    @result math.eval expr, makeVal(val)
+    @result math.eval(expr, makeVal(val)), expr
 
   # Check length of an array against an inequality expression.
   length: (obj, expr) ->
@@ -68,6 +70,12 @@ class Tests
       @_inequalityTest expr, Object.keys(obj).length
     else
       @result -1, "Only objects can be used with the count test."
+
+  print_length_as: (obj, expr) ->
+    if _.isArray obj
+      @result 2, "There are #{obj.length} #{expr}"
+    else
+      @result -1, "Only arrays can be used with the length test."
 
   # Check existence of a truthy value.
   exists: (obj, key) ->

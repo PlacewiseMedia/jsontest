@@ -2,6 +2,7 @@
 _ = require 'lodash'
 select = require 'JSONSelect'
 clc = require 'cli-color'
+path = require 'path'
 
 # Libs
 tests = require '../lib/tests'
@@ -14,14 +15,22 @@ module.exports = (grunt) ->
 
     # Assertions may be declared in a file location string, or explicitly within the gruntfile.
     if grunt.util.kindOf(@data.assert) is 'string'
-      assertions = grunt.file.readJSON @data.assert
+      if path.extname(@data.assert) is '.json'
+        assertions = grunt.file.readJSON @data.assert
+      if path.extname(@data.assert) is '.yaml'
+        assertions = grunt.file.readYAML @data.assert
     else
       assertions = @data.assert
 
     # Config tests
     for file in files
       if grunt.file.exists file
-        json = grunt.file.readJSON file
+        if path.extname(file) is '.json'
+          json = grunt.file.readJSON file
+        else if path.extname(file) is '.yaml'
+          json = grunt.file.readYAML file
+        else
+          grunt.log.error "Could not find file #{file}"
       else
         grunt.log.error "Could not find JSON file #{file}"
         continue
@@ -57,15 +66,15 @@ module.exports = (grunt) ->
           grunt.fail.warn "Selector #{conf.sel} didn't find any matches in #{file}."
 
         selector.forEach json, (obj) ->
-
           for type, expr of assertion
-            conf.obj = obj
-            conf.type = type
-            conf.expr = expr
+            c = _.clone conf
+            c.obj = obj
+            c.type = type
+            c.expr = expr
 
-            conf.test = tests type, conf.negated, conf.warning
+            c.test = tests type, c.negated, c.warning
 
-            expectations.push conf
+            expectations.push c
 
     # Helps for warning and dying later.
     warnings = 0
@@ -91,13 +100,19 @@ module.exports = (grunt) ->
 
     # Output results
     for target in results[@target]
-      grunt.log.writeln "Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
+      if target.result.condition is 'info'
+        grunt.log.writeln target.result.prettyMessage
+      else
+        grunt.log.writeln "Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
 
     # Write results
     if @data.dest
 
       if grunt.file.exists @data.dest
-        resultsFile = grunt.file.readJSON @data.dest
+        if path.extname(@data.dest) is '.json'
+          resultsFile = grunt.file.readJSON @data.dest
+        if path.extname(@data.dest) is '.yaml'
+          resultsFile = grunt.file.readYAML @data.dest
       else
         resultsFile = {}
 
