@@ -32,7 +32,7 @@ class Tests
 
   result: (code, msg) ->
     if code is -1
-      new Result 'fail', 'orange',  "Test written incorrectly: " + msg
+      new Result 'fail', 'magenta',  "Test written incorrectly: " + msg
     else if code is 2
       new Result 'info', 'cyan',    "Info: " + msg
     else if code

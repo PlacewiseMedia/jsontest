@@ -1,6 +1,6 @@
 {
   "name": "jsontest",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Testing JSON data structures using CSS3-like selectors",
   "keywords": [
     "testing",
