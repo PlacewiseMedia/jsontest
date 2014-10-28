@@ -36,6 +36,11 @@ module.exports = (grunt) ->
         continue
 
       for sel, assertion of assertions
+        if _.isString assertion
+          assertion =
+            length: 'val > 0'
+            print_length_as: assertion
+
         conf =
           assert: assertion
           negated: no
