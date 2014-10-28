@@ -90,6 +90,7 @@ module.exports = (grunt) ->
             c.length = matches.length
 
             c.test = tests type, c.negated, c.warning
+            c.test.sel = conf.sel
 
             expectations.push c
 
@@ -119,7 +120,11 @@ module.exports = (grunt) ->
     results = {}
     results[@target] = many_expectations.map (expect) ->
       {test, obj, expr, result} = expect
+
       result.prettyMessage = clc[result.color](result.message)
+      result.messages = [result.prettyMessage]
+      result.message_counts = [1]
+
       delete result.color
 
       if result.condition is 'warn'
@@ -131,12 +136,60 @@ module.exports = (grunt) ->
 
       expect
 
-    # Output results
-    for target in results[@target]
-      if target.result.condition is 'info'
-        grunt.verbose.writeln target.result.prettyMessage
+    # De-Duplicate
+    first = results[@target].shift()
+    first.hashes = ["#{first.test.sel} #{first.test.type}"]
+    first.exprs = []
+
+    deduped = {}
+    deduped[@target] = _.reduce(results[@target], (prev, curr) ->
+      last = _.last prev
+      hash = "#{curr.test.sel} #{curr.test.type}"
+
+      if last.hashes.indexOf(hash) is -1
+        curr.result.messages = [curr.result.prettyMessage]
+        curr.exprs = [curr.expr]
+        curr.result.message_counts.push 1
+        curr.hashes = last.hashes.concat hash
+        prev.push curr
       else
-        grunt.verbose.writeln "Found #{target.length}. Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
+        msg_index = last.result.messages.indexOf curr.result.prettyMessage
+
+        if msg_index is -1
+          last.result.messages.push curr.result.prettyMessage
+          last.exprs.push curr.expr
+          last.result.message_counts.push 1
+        else
+          last.result.message_counts[msg_index]++
+
+        prev[prev.length - 1] = last
+
+        # TODO kludgy
+        if curr.result.condition is 'warn'
+          warnings--
+        else if curr.result.condition is 'fail'
+          failures--
+        else if curr.result.condition is 'pass'
+          passes--
+
+      prev
+    [first])
+
+    # console.log deduped[@target]
+
+    # Output results
+    grunt.verbose.writeln clc.bold "\nTesting #{@target}\n"
+    for target in deduped[@target]
+      if target.result.condition is 'info'
+        grunt.verbose.writeln '\t' + target.result.prettyMessage
+      else
+        grunt.verbose.writeln "Tested #{target.sel} using #{target.type} test."
+
+        for message, message_index in target.result.messages
+          if target.result.message_counts[message_index] > 1
+            grunt.verbose.writeln "\t#{target.result.message_counts[message_index]} similar results for #{target.exprs[message_index]}: #{message}"
+          else
+            grunt.verbose.writeln "\tResults for #{target.exprs[message_index]}: #{message}"
 
     # Write results
     if @data.dest
@@ -145,7 +198,7 @@ module.exports = (grunt) ->
       else
         resultsFile = {}
 
-      resultsFile[@target] = _.pluck(results[@target], 'result')
+      resultsFile[@target] = _.pluck(deduped[@target], 'result')
       grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
 
     # Display results
@@ -158,8 +211,11 @@ module.exports = (grunt) ->
     if failures
       grunt.log.writeln clc.redBright "#{failures} tests failed."
 
-    if passes is expectations.length
-      grunt.log.writeln clc.green "All tests passed!"
+    length = _.filter(deduped[@target], (obj) -> obj.result.condition isnt 'info').length
+    if passes is length
+      grunt.log.writeln clc.greenBright "All #{@target} tests passed!"
+    else
+      grunt.log.writeln clc.yellowBright "#{passes} of #{length} #{@target} tests passed."
 
     # Finish
     cb()
