@@ -35,14 +35,14 @@ class Tests
       new Result 'fail', 'magenta',  "Test written incorrectly: " + msg
     else if code is 2
       new Result 'info', 'cyan',    "Info: " + msg
-    else if code
-      new Result 'pass', 'green',   "Test passed."
-    else if code is 0 and @negated
-      new Result 'pass', 'green',   "Test negated and passed."
-    else if code is 0 and @warning
+    else if (code is 0 and @warning) or code is 3
       new Result 'warn', 'yellow',  "Warning: " + msg
+    else if code
+      new Result 'pass', 'green',   "Test passed. " + msg
+    else if code is 0 and @negated
+      new Result 'pass', 'green',   "Test negated and passed. " + msg
     else
-      new Result 'fail', 'red',     "Test failed!"
+      new Result 'fail', 'red',     "Test failed! " + msg
 
   # Used for tests that use mathematical inequalities. Should be private.
   _inequalityTest: (expr, val) ->
@@ -55,38 +55,49 @@ class Tests
     unless search expr, ['v ', ' v', 'val', 'value']
       return @result -1, "Expression must compare against a value (v, val, value)."
 
-    @result math.eval(expr, makeVal(val)), expr
+    @result math.eval(expr, makeVal(val)), "val = #{val}"
 
   # Check length of an array against an inequality expression.
   length: (obj, expr) ->
     if _.isArray obj
       @_inequalityTest expr, obj.length
     else
-      @result -1, "Only arrays can be used with the length test."
+      @result -1, "Only arrays can be used with the length test. You provided: #{typeof expr}"
 
   # Check number of keys in an object against an inequality expression.
   count: (obj, expr) ->
     if _.isObject obj
       @_inequalityTest expr, Object.keys(obj).length
     else
-      @result -1, "Only objects can be used with the count test."
+      @result -1, "Only objects can be used with the count test. You provided: #{typeof expr}"
 
   # Prints the length of the supplied array as an info message.
   print_length_as: (obj, expr) ->
     if _.isArray obj
       @result 2, "There are #{obj.length} #{expr}"
     else
-      @result -1, "Only arrays can be used with the length test."
+      @result -1, "Only arrays can be used with the length test. You provided: #{typeof expr}"
 
   # Check existence of a truthy value.
   exists: (obj, key) ->
     unless _.isString key
-      return @result -1, "Property name must be a string."
+      return @result -1, "Property name must be a string. You provided: #{typeof key}"
 
     if obj[key]
-      @result 1
+      @result 1, "`#{key}` found"
+    else if _.isNull obj[key]
+      @result 3, "`#{key}` found, but value was null"
     else
-      @result 0
+      @result 0, "`#{key}` missing"
+
+  exists_many: (obj, arr) ->
+    results = []
+    if _.isArray arr
+      for item in arr
+        results.push @exists obj, item
+      results
+    else
+      @result -1, "Only arrays can be used with the exists_many test. You provided: #{typeof arr}"
 
   # Check JSON type against Grunt's own type detector.
   kind: (obj, type) ->

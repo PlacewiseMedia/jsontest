@@ -36,7 +36,11 @@ module.exports = (grunt) ->
         continue
 
       for sel, assertion of assertions
-        if _.isString assertion
+        if _.isArray assertion
+          assertion =
+            exists_many: assertion
+
+        else if _.isString assertion
           assertion =
             length: 'val > 0'
             print_length_as: assertion
@@ -83,6 +87,7 @@ module.exports = (grunt) ->
             c.obj = obj
             c.type = type
             c.expr = expr
+            c.length = matches.length
 
             c.test = tests type, c.negated, c.warning
 
@@ -93,19 +98,35 @@ module.exports = (grunt) ->
     failures = 0
     passes = 0
 
+    # Expand multis
+    many_expectations = []
+
+    for expect in expectations
+      {test, obj, expr} = expect
+      results = test.run obj, expr
+
+      if _.isArray results
+        for result, i in results
+          e = _.clone expect
+          e.expr = expr[i]
+          e.result = result
+          many_expectations.push e
+      else
+        expect.result = results
+        many_expectations.push expect
+
     # Run tests
     results = {}
-    results[@target] = expectations.map (expect) ->
-      {test, obj, expr} = expect
-      expect.result = test.run obj, expr
-      expect.result.prettyMessage = clc[expect.result.color](expect.result.message)
-      delete expect.result.color
+    results[@target] = many_expectations.map (expect) ->
+      {test, obj, expr, result} = expect
+      result.prettyMessage = clc[result.color](result.message)
+      delete result.color
 
-      if expect.result.condition is 'warn'
+      if result.condition is 'warn'
         warnings++
-      else if expect.result.condition is 'fail'
+      else if result.condition is 'fail'
         failures++
-      else if expect.result.condition is 'pass'
+      else if result.condition is 'pass'
         passes++
 
       expect
@@ -115,7 +136,7 @@ module.exports = (grunt) ->
       if target.result.condition is 'info'
         grunt.log.writeln target.result.prettyMessage
       else
-        grunt.log.writeln "Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
+        grunt.log.writeln "Found #{target.length}. Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}."
 
     # Write results
     if @data.dest
