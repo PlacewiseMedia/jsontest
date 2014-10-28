@@ -134,18 +134,14 @@ module.exports = (grunt) ->
     # Output results
     for target in results[@target]
       if target.result.condition is 'info'
-        grunt.log.writeln target.result.prettyMessage
+        grunt.verbose.writeln target.result.prettyMessage
       else
-        grunt.log.writeln "Found #{target.length}. Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}."
+        grunt.verbose.writeln "Found #{target.length}. Tested #{target.sel} in #{target.file} using #{target.type} test for #{target.expr}: #{target.result.prettyMessage}"
 
     # Write results
     if @data.dest
-
       if grunt.file.exists @data.dest
-        if path.extname(@data.dest) is '.json'
-          resultsFile = grunt.file.readJSON @data.dest
-        if path.extname(@data.dest) is '.yaml'
-          resultsFile = grunt.file.readYAML @data.dest
+        resultsFile = grunt.file.readJSON @data.dest
       else
         resultsFile = {}
 
@@ -153,14 +149,14 @@ module.exports = (grunt) ->
       grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
 
     # Display results
-    grunt.log.writeln "Summary:"
-    grunt.log.writeln clc.green "#{passes} tests passed."
+    grunt.log.writeln "\nSummary:"
+    grunt.log.writeln clc.greenBright "#{passes} tests passed."
 
     if warnings
-      grunt.fail.warn "#{warnings} tests resulted in warnings."
+      grunt.log.writeln clc.yellowBright "#{warnings} tests resulted in warnings."
 
     if failures
-      grunt.fail.fatal "#{failures} tests failed."
+      grunt.log.writeln clc.redBright "#{failures} tests failed."
 
     if passes is expectations.length
       grunt.log.writeln clc.green "All tests passed!"

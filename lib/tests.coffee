@@ -31,12 +31,16 @@ class Tests
     @run = @[type]
 
   result: (code, msg) ->
+    msg = msg or ''
+
     if code is -1
       new Result 'fail', 'magenta',  "Test written incorrectly: " + msg
     else if code is 2
       new Result 'info', 'cyan',    "Info: " + msg
     else if (code is 0 and @warning) or code is 3
       new Result 'warn', 'yellow',  "Warning: " + msg
+    else if code is 1 and @negated
+      new Result 'fail', 'red',   "Test negated and failed. " + msg
     else if code
       new Result 'pass', 'green',   "Test passed. " + msg
     else if code is 0 and @negated
@@ -84,7 +88,7 @@ class Tests
       return @result -1, "Property name must be a string. You provided: #{typeof key}"
 
     if obj[key]
-      @result 1, "`#{key}` found"
+      @result 1, "`#{key}` found, value was #{obj[key].toString().substr(0, 25)}"
     else if _.isNull obj[key]
       @result 3, "`#{key}` found, but value was null"
     else
@@ -97,23 +101,27 @@ class Tests
         results.push @exists obj, item
       results
     else
-      @result -1, "Only arrays can be used with the exists_many test. You provided: #{typeof arr}"
+      @result -1, "Only arrays can be used with the exists_many test. What was found: #{typeof arr}"
 
   # Check JSON type against Grunt's own type detector.
   kind: (obj, type) ->
-    types =
-      array:      'isArray'
-      object:     'isObject'
-      string:     'isString'
-      number:     'isNumber'
-      boolean:    'isBoolean'
-      null:       'isNull'
-      undefined:  'isUndefined'
+    types = [
+      'isArray'
+      'isObject'
+      'isString'
+      'isNumber'
+      'isBoolean'
+      'isNull'
+      'isUndefined'
+    ]
 
-    unless types[type]
+    unless types.indexOf type is -1
       return @result -1, "Invalid JSON type was provided."
 
-    @result _[types[type]](obj)
+    if _[type](obj)
+      @result 1, "Found type #{type}"
+    else
+      @result 0, "Found type not #{type}"
 
   # Contains the provided array of keys. Not recursive.
   containsKeys: (obj, keys) ->
@@ -127,6 +135,22 @@ class Tests
       return @result 0, "Couldn't find the following keys: " + missingKeys.join ', '
 
     @result 1
+
+  contains: (val, obj) ->
+    if _.isArray obj
+      for item in obj
+        str = item.toString()
+        result = str.indexOf val
+        if result > -1
+          break
+    else
+      str = obj.toString()
+      result = str.indexOf val
+
+    if result > -1
+      @result 1, "Found #{val}"
+    else
+      @result 0, "Couldn't find #{val}"
 
   # Checks against iz rules.
   rules: (obj, rules) ->
