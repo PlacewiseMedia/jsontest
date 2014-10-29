@@ -102,11 +102,6 @@ module.exports = (grunt) ->
 
             expectations.push c
 
-    # Helps for warning and dying later.
-    warnings = 0
-    failures = 0
-    passes = 0
-
     # Expand multis
     many_expectations = []
 
@@ -134,13 +129,6 @@ module.exports = (grunt) ->
       result.message_counts = [1]
 
       delete result.color
-
-      if result.condition is 'warn'
-        warnings++
-      else if result.condition is 'fail'
-        failures++
-      else if result.condition is 'pass'
-        passes++
 
       if _.isObject expr
         expect.expr = expr.key
@@ -177,15 +165,6 @@ module.exports = (grunt) ->
           last.result.message_counts[msg_index]++
 
         prev[prev.length - 1] = last
-
-        # TODO kludgy
-        if curr.result.condition is 'warn'
-          warnings--
-        else if curr.result.condition is 'fail'
-          failures--
-        else if curr.result.condition is 'pass'
-          passes--
-
       prev
     [first])
 
@@ -220,6 +199,17 @@ module.exports = (grunt) ->
       grunt.file.write @data.dest, JSON.stringify(filtered, null, 2)
 
     # Display results
+    reduce_condition = (condition) ->
+      _.reduce record, (prev, curr) ->
+        if curr.result.condition is condition
+          prev++
+        prev
+      , 0
+
+    passes = reduce_condition 'pass'
+    failures = reduce_condition 'fail'
+    warnings = reduce_condition 'warn'
+
     grunt.log.writeln "\nSummary:"
     grunt.log.writeln clc.greenBright "#{passes} tests passed."
 
@@ -229,7 +219,7 @@ module.exports = (grunt) ->
     if failures
       grunt.log.writeln clc.redBright "#{failures} tests failed."
 
-    length = _.filter(deduped[@target], (obj) -> obj.result.condition isnt 'info').length
+    length = _.filter(record, (obj) -> obj.result.condition isnt 'info').length
     if passes is length
       grunt.log.writeln clc.greenBright "All #{@target} tests passed!"
     else
