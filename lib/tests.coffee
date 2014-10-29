@@ -38,7 +38,7 @@ class Tests
     else if code is 2
       new Result 'info', 'cyan',    "Info: " + msg
     else if (code is 0 and @warning) or code is 3
-      new Result 'warn', 'yellow',  "Warning: " + msg
+      new Result 'warn', 'yellowBright',  "Warning: " + msg
     else if code is 1 and @negated
       new Result 'fail', 'red',   "Test negated and failed. " + msg
     else if code

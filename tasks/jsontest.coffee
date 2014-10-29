@@ -72,7 +72,7 @@ module.exports = (grunt) ->
         matches = selector.match json
 
         unless matches.length
-          grunt.fail.warn "Selector #{conf.sel} didn't find any matches in #{file}."
+          grunt.log.writeln clc.yellowBright "Selector #{conf.sel} didn't find any matches in #{@target}. No test made."
 
         selector.forEach json, (obj) ->
           for type, expr of assertion
@@ -137,9 +137,11 @@ module.exports = (grunt) ->
       expect
 
     # De-Duplicate
+    record = _.clone results[@target], yes
+
     first = results[@target].shift()
     first.hashes = ["#{first.test.sel} #{first.test.type}"]
-    first.exprs = []
+    first.exprs = [first.expr]
 
     deduped = {}
     deduped[@target] = _.reduce(results[@target], (prev, curr) ->
@@ -149,7 +151,6 @@ module.exports = (grunt) ->
       if last.hashes.indexOf(hash) is -1
         curr.result.messages = [curr.result.prettyMessage]
         curr.exprs = [curr.expr]
-        curr.result.message_counts.push 1
         curr.hashes = last.hashes.concat hash
         prev.push curr
       else
@@ -175,8 +176,6 @@ module.exports = (grunt) ->
       prev
     [first])
 
-    # console.log deduped[@target]
-
     # Output results
     grunt.verbose.writeln clc.bold "\nTesting #{@target}\n"
     for target in deduped[@target]
@@ -194,12 +193,15 @@ module.exports = (grunt) ->
     # Write results
     if @data.dest
       if grunt.file.exists @data.dest
-        resultsFile = grunt.file.readJSON @data.dest
+        filtered = grunt.file.readJSON @data.dest
       else
-        resultsFile = {}
+        filtered = {}
 
-      resultsFile[@target] = _.pluck(deduped[@target], 'result')
-      grunt.file.write @data.dest, JSON.stringify(resultsFile, null, 2)
+      filtered[@target] = _.pluck(record, 'result').map (item) ->
+        condition: item.condition
+        message: item.message
+
+      grunt.file.write @data.dest, JSON.stringify(filtered, null, 2)
 
     # Display results
     grunt.log.writeln "\nSummary:"
