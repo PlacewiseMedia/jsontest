@@ -104,7 +104,7 @@ class Tests
       @result -1, "Only arrays can be used with the exists_many test. What was found: #{typeof arr}"
 
   # Check JSON type against Lodash type detector.
-  kind: (obj, type) ->
+  kind: (o, t) ->
     types =
       array:      'isArray'
       object:     'isObject'
@@ -113,6 +113,13 @@ class Tests
       boolean:    'isBoolean'
       null:       'isNull'
       undefined:  'isUndefined'
+
+    if _.isString t
+      type = t
+      obj = o
+    else
+      obj = o[t.key]
+      type = t.val
 
     unless types[type]
       return @result -1, "Invalid JSON type was provided."

@@ -41,9 +41,11 @@ module.exports = (grunt) ->
             exists_many: assertion.map (a) ->
               a.match(/\S+/g)[0]
             kind_many: assertion.reduce( (prev, curr) ->
-              spl = curr.match(/\S+/g)
+              spl = curr.match /\S+/g
               if spl[1]
-                prev.push spl[1]
+                prev.push
+                  key: spl[0]
+                  val: spl[1]
               prev
             , [])
         else if _.isString assertion
@@ -109,7 +111,7 @@ module.exports = (grunt) ->
     many_expectations = []
 
     for expect in expectations
-      {test, obj, expr} = expect
+      { test, obj, expr } = expect
       results = test.run obj, expr
 
       if _.isArray results
@@ -125,7 +127,7 @@ module.exports = (grunt) ->
     # Run tests
     results = {}
     results[@target] = many_expectations.map (expect) ->
-      {test, obj, expr, result} = expect
+      { test, obj, expr, result } = expect
 
       result.prettyMessage = clc[result.color](result.message)
       result.messages = [result.prettyMessage]
@@ -139,6 +141,11 @@ module.exports = (grunt) ->
         failures++
       else if result.condition is 'pass'
         passes++
+
+      if _.isObject expr
+        expect.expr = expr.key
+
+      expect.result = result
 
       expect
 
@@ -164,6 +171,7 @@ module.exports = (grunt) ->
 
         if msg_index is -1
           last.result.messages.push curr.result.prettyMessage
+          console.log curr.expr
           last.exprs.push curr.expr
           last.result.message_counts.push 1
         else
@@ -204,6 +212,8 @@ module.exports = (grunt) ->
         filtered = {}
 
       filtered[@target] = _.map record, (item) ->
+        type: item.test.type
+        selector: item.test.sel
         expression: item.expr
         condition: item.result.condition
         message: item.result.message
