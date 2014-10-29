@@ -171,7 +171,6 @@ module.exports = (grunt) ->
 
         if msg_index is -1
           last.result.messages.push curr.result.prettyMessage
-          console.log curr.expr
           last.exprs.push curr.expr
           last.result.message_counts.push 1
         else
