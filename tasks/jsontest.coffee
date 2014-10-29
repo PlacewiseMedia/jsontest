@@ -197,9 +197,10 @@ module.exports = (grunt) ->
       else
         filtered = {}
 
-      filtered[@target] = _.pluck(record, 'result').map (item) ->
-        condition: item.condition
-        message: item.message
+      filtered[@target] = _.map record, (item) ->
+        expression: item.expr
+        condition: item.result.condition
+        message: item.result.message
 
       grunt.file.write @data.dest, JSON.stringify(filtered, null, 2)
 
