@@ -38,8 +38,14 @@ module.exports = (grunt) ->
       for sel, assertion of assertions
         if _.isArray assertion
           assertion =
-            exists_many: assertion
-
+            exists_many: assertion.map (a) ->
+              a.match(/\S+/g)[0]
+            kind_many: assertion.reduce( (prev, curr) ->
+              spl = curr.match(/\S+/g)
+              if spl[1]
+                prev.push spl[1]
+              prev
+            , [])
         else if _.isString assertion
           assertion =
             length: 'val > 0'

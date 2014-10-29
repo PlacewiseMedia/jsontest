@@ -103,25 +103,33 @@ class Tests
     else
       @result -1, "Only arrays can be used with the exists_many test. What was found: #{typeof arr}"
 
-  # Check JSON type against Grunt's own type detector.
+  # Check JSON type against Lodash type detector.
   kind: (obj, type) ->
-    types = [
-      'isArray'
-      'isObject'
-      'isString'
-      'isNumber'
-      'isBoolean'
-      'isNull'
-      'isUndefined'
-    ]
+    types =
+      array:      'isArray'
+      object:     'isObject'
+      string:     'isString'
+      number:     'isNumber'
+      boolean:    'isBoolean'
+      null:       'isNull'
+      undefined:  'isUndefined'
 
-    unless types.indexOf type is -1
+    unless types[type]
       return @result -1, "Invalid JSON type was provided."
 
-    if _[type](obj)
-      @result 1, "Found type #{type}"
+    if _[types[type]](obj)
+      @result 1, "Found #{obj} is #{type}"
     else
-      @result 0, "Found type not #{type}"
+      @result 0, "Found #{obj} not #{type}"
+
+  kind_many: (obj, arr) ->
+    results = []
+    if _.isArray arr
+      for item in arr
+        results.push @kind obj, item
+      results
+    else
+      @result -1, "Only arrays can be used with the kind_many test. What was found: #{typeof arr}"
 
   # Contains the provided array of keys. Not recursive.
   containsKeys: (obj, keys) ->
