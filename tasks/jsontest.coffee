@@ -82,25 +82,34 @@ module.exports = (grunt) ->
         unless matches.length
           grunt.log.writeln clc.yellowBright "Selector #{conf.sel} didn't find any matches in #{@target}. No test made."
 
+        create_expectation = (expr, obj, type) ->
+          c = _.clone conf
+          c.obj = obj
+          c.type = type
+          c.expr = expr
+          c.length = matches.length
+
+          c.test = tests type, c.negated, c.warning
+          c.test.sel = c.sel
+
+          expectations.push c
+
         selector.forEach json, (obj) ->
-          for type, expr of assertion
+          for type, exprs of assertion
             # Process any selectors within an assertion, as well. Uses lexic pattern from qonsumer.
-            lexics = expr.toString().match /\(.*?\)/g
+            lexics = exprs.toString().match /\(.*?\)/g
             if lexics
               for lexic in lexics
-                expr_matches = select.match lexic.substring(1, lexic.length - 1), obj
-                expr = expr.replace lexic, expr_matches[0] # Hardcoded, always use first result.
-
-            c = _.clone conf
-            c.obj = obj
-            c.type = type
-            c.expr = expr
-            c.length = matches.length
-
-            c.test = tests type, c.negated, c.warning
-            c.test.sel = conf.sel
-
-            expectations.push c
+                lexsel = conf.sel + ' ' + lexic.substring(1, lexic.length - 1)
+                expr_matches = select.match lexsel, json
+                if expr_matches.length
+                  for exp in expr_matches
+                    expr = exprs.toString().replace lexic, exp
+                    create_expectation expr, obj, type
+                else
+                  create_expectation exprs, obj, type
+            else
+              create_expectation exprs, obj, type
 
     # Expand multis
     many_expectations = []
@@ -122,7 +131,7 @@ module.exports = (grunt) ->
     # Run tests
     results = {}
     results[@target] = many_expectations.map (expect) ->
-      { test, obj, expr, result } = expect
+      { expr, result } = expect
 
       result.prettyMessage = clc[result.color](result.message)
       result.messages = [result.prettyMessage]
