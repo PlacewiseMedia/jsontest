@@ -116,9 +116,21 @@ class Tests
       boolean:    _.isBoolean
       null:       _.isNull
       undefined:  _.isUndefined
+      # aliases
+      arr:        _.isArray
+      obj:        _.isObject
+      str:        _.isString
+      num:        _.isNumber
+      bool:       _.isBoolean
+      undef:      _.isUndefined
+      # additional validations
       date:       validator.isDate
       url:        validator.isURL
+      email:      validator.isEmail
+      phone:      validator.isPhone
+      postal:     validator.isPostal
       int:        validator.isInt
+      float:      validator.isFloat
 
     unless o
       return @result 0, "Nothing supplied to type as `#{t}`"
@@ -132,7 +144,8 @@ class Tests
     unless types[type]
       return @result -1, "Invalid validation type was provided."
 
-    if types[type](obj)
+    # special case to enable phone number extensions
+    if (type is 'phone' and types[type](obj, yes)) or types[type](obj)
       @result 1, "Found #{obj} is #{type}"
     else
       @result 0, "Found #{obj} not #{type}"

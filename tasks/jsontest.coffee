@@ -35,7 +35,7 @@ module.exports = (grunt) ->
         grunt.log.error "Could not find JSON file #{file}"
         continue
 
-      for sel, assertion of assertions
+      for sel, assertion of assertions when sel isnt 'model' and sel isnt 'models'
         if _.isArray assertion
           assertion =
             exists_many: assertion.map (a) ->
