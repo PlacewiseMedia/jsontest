@@ -87,7 +87,9 @@ class Tests
     unless _.isString key
       return @result -1, "Property name must be a string. You provided: #{typeof key}"
 
-    if obj[key]
+    unless obj
+      @result 0, "Nothing supplied to match against `#{key}`"
+    else if obj[key]
       @result 1, "`#{key}` found, value was #{obj[key].toString().substr(0, 25)}"
     else if _.isNull obj[key]
       @result 3, "`#{key}` found, but value was null"
@@ -114,7 +116,9 @@ class Tests
       null:       'isNull'
       undefined:  'isUndefined'
 
-    if _.isString t
+    unless o
+      return @result 0, "Nothing supplied to type as `#{t}`"
+    else if _.isString t
       type = t
       obj = o
     else
