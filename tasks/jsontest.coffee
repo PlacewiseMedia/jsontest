@@ -146,6 +146,12 @@ module.exports = (grunt) ->
 
       expect
 
+    # In case there are no tests, such as, if nothing matches a selector...
+    unless results[@target].length
+      grunt.log.writeln 'No tests were generated.'
+      cb()
+      return
+
     # De-Duplicate
     record = _.clone results[@target], yes
 
