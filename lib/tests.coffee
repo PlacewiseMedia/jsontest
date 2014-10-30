@@ -109,6 +109,7 @@ class Tests
   # Check JSON type against Lodash type detector.
   kind: (o, t) ->
     types =
+      # basic types
       array:      _.isArray
       object:     _.isObject
       string:     _.isString
@@ -127,10 +128,11 @@ class Tests
       date:       validator.isDate
       url:        validator.isURL
       email:      validator.isEmail
-      phone:      validator.isPhone
-      postal:     validator.isPostal
       int:        validator.isInt
       float:      validator.isFloat
+      phone:      iz.phone
+      zip:        iz.postal
+      postal:     iz.postal
 
     unless o
       return @result 0, "Nothing supplied to type as `#{t}`"
@@ -142,7 +144,7 @@ class Tests
       type = t.val
 
     unless types[type]
-      return @result -1, "Invalid validation type was provided."
+      return @result -1, "Invalid validation type was provided. (#{type})"
 
     # special case to enable phone number extensions
     if (type is 'phone' and types[type](obj, yes)) or types[type](obj)
