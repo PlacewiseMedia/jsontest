@@ -179,15 +179,21 @@ module.exports = (grunt) ->
 
     # Output results
     grunt.verbose.writeln clc.bold "\nTesting #{@target}\n"
-    for target in deduped[@target]
-      if target.result.condition is 'info'
-        grunt.verbose.writeln '\t' + target.result.prettyMessage
-      else
-        grunt.verbose.writeln "Tested #{target.sel} using #{target.type} test."
 
-        for message, message_index in target.result.messages
-          if target.result.message_counts[message_index] > 1
+    options = @options
+      info: no
+
+    for target in deduped[@target]
+      grunt.verbose.writeln "Tested #{target.sel} using #{target.type} test."
+      for message, message_index in target.result.messages
+        if target.result.message_counts[message_index] > 1
+          if target.result.condition is 'info'
+            grunt.verbose.writeln "\t#{target.result.message_counts[message_index]} similar results for #{message}" if options.info
+          else
             grunt.verbose.writeln "\t#{target.result.message_counts[message_index]} similar results for #{target.exprs[message_index]}: #{message}"
+        else
+          if target.result.condition is 'info'
+            grunt.verbose.writeln "\t#{message}" if options.info
           else
             grunt.verbose.writeln "\tResults for #{target.exprs[message_index]}: #{message}"
 
