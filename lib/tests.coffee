@@ -3,6 +3,7 @@ _ = require 'lodash'
 _s = require 'underscore.string'
 math = require 'mathjs'
 iz = require 'iz'
+validator = require 'validator'
 
 # Private Helpers
 
@@ -108,13 +109,16 @@ class Tests
   # Check JSON type against Lodash type detector.
   kind: (o, t) ->
     types =
-      array:      'isArray'
-      object:     'isObject'
-      string:     'isString'
-      number:     'isNumber'
-      boolean:    'isBoolean'
-      null:       'isNull'
-      undefined:  'isUndefined'
+      array:      _.isArray
+      object:     _.isObject
+      string:     _.isString
+      number:     _.isNumber
+      boolean:    _.isBoolean
+      null:       _.isNull
+      undefined:  _.isUndefined
+      date:       validator.isDate
+      url:        validator.isURL
+      int:        validator.isInt
 
     unless o
       return @result 0, "Nothing supplied to type as `#{t}`"
@@ -126,9 +130,9 @@ class Tests
       type = t.val
 
     unless types[type]
-      return @result -1, "Invalid JSON type was provided."
+      return @result -1, "Invalid validation type was provided."
 
-    if _[types[type]](obj)
+    if types[type](obj)
       @result 1, "Found #{obj} is #{type}"
     else
       @result 0, "Found #{obj} not #{type}"

@@ -28,6 +28,7 @@
     "lodash": "^2.4.1",
     "mathjs": "^1.0.1",
     "time-grunt": "^1.0.0",
-    "underscore.string": "^2.3.3"
+    "underscore.string": "^2.3.3",
+    "validator": "^3.22.1"
   }
 }
